@@ -1,107 +1,102 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import {
-  View, SafeAreaView, StyleSheet, Pressable, Text,
-  Platform, ActionSheetIOS, Modal
-} from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text, Pressable, Modal, StyleSheet } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useNavigation, RouteProp } from "@react-navigation/native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useHeaderHeight } from "@react-navigation/elements";
 import KanbanView from "../components/kanban/kanban_view";
 import MosaicoView from "../components/mosaico/MosaicoView";
 
 type GroupStyle = "mosaico" | "kanban";
-type RootStackParamList = { Grupo: { groupId: string; nombre?: string } };
+type Props = { route: { params: { groupId: string; nombre?: string } } };
 
-export default function Grupo({ route }: { route: RouteProp<RootStackParamList, "Grupo"> }) {
+const STYLE_KEY = (id: string) => `group_style:${id}`;
+
+export default function Grupo({ route }: Props) {
   const groupId = route?.params?.groupId ?? "default";
-  const nombre = route?.params?.nombre ?? groupId;
-
-  const navigation = useNavigation();
-  const insets = useSafeAreaInsets();
-  const headerH = useHeaderHeight();
-
-  const [uiStyle, setUiStyle] = useState<GroupStyle>("mosaico");
+  const title = route?.params?.nombre ?? "Grupo";
+  const [viewStyle, setViewStyle] = useState<GroupStyle>("mosaico");
   const [menuOpen, setMenuOpen] = useState(false);
-  const saving = useRef(false);
 
-  // Cargar preferencia
   useEffect(() => {
     (async () => {
-      const saved = await AsyncStorage.getItem(`groupStyle:${groupId}`);
-      if (saved === "mosaico" || saved === "kanban") setUiStyle(saved as GroupStyle);
+      try {
+        const s = await AsyncStorage.getItem(STYLE_KEY(groupId));
+        if (s === "mosaico" || s === "kanban") setViewStyle(s);
+      } catch {}
     })();
   }, [groupId]);
 
-  // Guardar preferencia
-  useEffect(() => {
-    if (saving.current) return;
-    saving.current = true;
-    AsyncStorage.setItem(`groupStyle:${groupId}`, uiStyle).finally(() => (saving.current = false));
-  }, [uiStyle, groupId]);
-
-  // Botón en el header
-  useLayoutEffect(() => {
-    navigation?.setOptions({
-      headerTitle: nombre,
-      headerRight: () => (
-        <Pressable onPress={openMenu} hitSlop={12} style={styles.styleBtnNav}>
-          <Text style={{ fontSize: 20 }}>⋮</Text>
-        </Pressable>
-      ),
-    });
-  }, [navigation, nombre, uiStyle]);
-
-  const choose = (s: GroupStyle) => { setUiStyle(s); setMenuOpen(false); };
-
-  function openMenu() {
-    if (Platform.OS === "ios") {
-      ActionSheetIOS.showActionSheetWithOptions(
-        { options: ["Mosaico", "Kanban", "Cancelar"], cancelButtonIndex: 2, userInterfaceStyle: "dark" },
-        (i) => { if (i === 0) choose("mosaico"); if (i === 1) choose("kanban"); }
-      );
-    } else setMenuOpen(true);
-  }
+  const applyStyle = async (s: GroupStyle) => {
+    setViewStyle(s);
+    setMenuOpen(false);
+    try { await AsyncStorage.setItem(STYLE_KEY(groupId), s); } catch {}
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {uiStyle === "mosaico" && <MosaicoView groupId={groupId} />}
-      {uiStyle === "kanban"  && <KanbanView  groupId={groupId} />}
+    <View style={{ flex: 1 }}>
+      {/* Header propio porque dijiste que no usas navigator */}
+      <View style={styles.header}>
+        <Text style={styles.title}>{title}</Text>
+        <View style={styles.right}>
+          <Text style={styles.user}>cirh</Text>
+          <Pressable
+            onPress={() => setMenuOpen(true)}
+            style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.7 }]}
+            android_ripple={{ color: "#00000022", borderless: true }}
+          >
+            <Text style={styles.icon}>⋮</Text>
+          </Pressable>
+        </View>
+      </View>
 
-      {/* Menú Android */}
+      {viewStyle === "kanban"
+        ? <KanbanView groupId={groupId} />
+        : <MosaicoView groupId={groupId} />}
+
+      {/* Menú */}
       <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={() => setMenuOpen(false)}>
-        <Pressable style={styles.backdrop} onPress={() => setMenuOpen(false)}>
-          <View style={[styles.menu, { top: (insets.top || 0) + headerH - 8, right: 12 }]}>
-            <MenuItem label={`Mosaico ${uiStyle === "mosaico" ? "✓" : ""}`} onPress={() => choose("mosaico")} />
-            <MenuItem label={`Kanban ${uiStyle === "kanban" ? "✓" : ""}`}   onPress={() => choose("kanban")} />
-          </View>
-        </Pressable>
+        <Pressable style={styles.backdrop} onPress={() => setMenuOpen(false)} />
+        <View style={styles.menu}>
+          <Text style={styles.menuTitle}>Vista de tareas</Text>
+
+          <Pressable style={styles.menuItem} onPress={() => applyStyle("mosaico")}>
+            <View style={styles.row}>
+              <View style={[styles.radio, viewStyle === "mosaico" && styles.radioOn]} />
+              <Text style={styles.menuText}>Mosaico</Text>
+            </View>
+          </Pressable>
+
+          <Pressable style={styles.menuItem} onPress={() => applyStyle("kanban")}>
+            <View style={styles.row}>
+              <View style={[styles.radio, viewStyle === "kanban" && styles.radioOn]} />
+              <Text style={styles.menuText}>Kanban</Text>
+            </View>
+          </Pressable>
+        </View>
       </Modal>
-
-      {/* FAB añadir materia (conéctalo a tu modal/pantalla) */}
-      <Pressable onPress={() => console.log("Añadir materia", groupId)} style={styles.fab}>
-        <Text style={styles.fabText}>＋</Text>
-      </Pressable>
-    </SafeAreaView>
-  );
-}
-
-function MenuItem({ label, onPress }: { label: string; onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}>
-      <Text style={styles.itemText}>{label}</Text>
-    </Pressable>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container:{ flex:1, backgroundColor:"#F8F9FA" },
-  styleBtnNav:{ paddingHorizontal:12, paddingVertical:6, borderRadius:12, backgroundColor:"#f2f2f7", marginRight:8 },
-  backdrop:{ flex:1, backgroundColor:"rgba(0,0,0,0.2)" },
-  menu:{ position:"absolute", width:190, borderRadius:12, paddingVertical:6, backgroundColor:"#1f1f1f", elevation:6 },
-  item:{ paddingVertical:10, paddingHorizontal:14 },
-  itemPressed:{ backgroundColor:"#2a2a2a" },
-  itemText:{ color:"#fff", fontSize:16 },
-  fab:{ position:"absolute", right:16, bottom:24, zIndex:50, width:56, height:56, borderRadius:28, alignItems:"center", justifyContent:"center", backgroundColor:"#2f80ed", elevation:5 },
-  fabText:{ color:"#fff", fontSize:28, lineHeight:28, fontWeight:"600" },
+  header: {
+    height: 56, paddingHorizontal: 16, flexDirection: "row",
+    alignItems: "center", justifyContent: "space-between",
+    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "#ddd", backgroundColor: "#fff",
+  },
+  title: { fontSize: 18, fontWeight: "600" },
+  right: { flexDirection: "row", alignItems: "center", gap: 8 },
+  user: { fontSize: 14, color: "#555" },
+  iconBtn: { padding: 6, borderRadius: 16 },
+  icon: { fontSize: 20 },
+  backdrop: { position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: "#00000033" },
+  menu: {
+    position: "absolute", top: 58, right: 12, minWidth: 200, borderRadius: 12,
+    backgroundColor: "#fff", paddingVertical: 8, elevation: 8,
+    shadowColor: "#000", shadowOpacity: 0.2, shadowRadius: 12, shadowOffset: { width: 0, height: 6 },
+  },
+  menuTitle: { fontSize: 12, color: "#666", paddingHorizontal: 12, paddingBottom: 6 },
+  menuItem: { paddingHorizontal: 12, paddingVertical: 10 },
+  menuText: { fontSize: 16 },
+  row: { flexDirection: "row", alignItems: "center", gap: 10 },
+  radio: { width: 16, height: 16, borderRadius: 10, borderWidth: 2, borderColor: "#555" },
+  radioOn: { backgroundColor: "#555" },
 });
