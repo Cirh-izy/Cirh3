@@ -2,16 +2,16 @@
 import React from 'react'
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { Modalize } from 'react-native-modalize'
-import { IHandles } from 'react-native-modalize/lib/options'
+import type { IHandles } from 'react-native-modalize/lib/options'
 
-interface AddActionSheetProps {
-    modalRef: React.RefObject<IHandles>
+type Props = {
+    modalRef: React.RefObject<IHandles | null>
     onCrearMateria: () => void
     onCrearTarea?: () => void
     mostrarCrearTarea: boolean
 }
 
-const AddActionSheet: React.FC<AddActionSheetProps> = ({ modalRef, onCrearMateria, onCrearTarea, mostrarCrearTarea }) => {
+const AddActionSheet: React.FC<Props> = ({ modalRef, onCrearMateria, onCrearTarea, mostrarCrearTarea }) => {
     return (
         <Modalize
             ref={modalRef}

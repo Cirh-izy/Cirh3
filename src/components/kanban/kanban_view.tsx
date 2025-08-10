@@ -1,28 +1,28 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { IHandles } from "react-native-modalize/lib/options";
 import { View, Alert, ScrollView, TouchableOpacity, Text, StyleSheet } from "react-native";
-import { Tarea } from "../../models/types";
+import type { Tarea } from "../../models/types";
 import { useAppStore } from "../../store/useAppStore";
 import KanbanTaskCard from "./kanban_taskcard";
 import TaskBottomSheet from "./task_creation_modal";
 import MateriaModal from "./create-materia";
 import AddActionSheet from "./add_action";
 
-type Props = { groupId: string };
+type Props = { groupId?: string };
 
 export default function KanbanView({ groupId }: Props) {
-  const modalRef = useRef<IHandles>(null!);
-  const addSheetRef = useRef<IHandles>(null!);
+  const gidFromStore = useAppStore(s => s.grupoSeleccionadoId);
+  const gid = groupId ?? gidFromStore ?? "";
+  const setSelectedGroup = useAppStore(s => s.setGrupoSeleccionadoId);
+  useEffect(() => { if (gid) setSelectedGroup(gid); }, [gid, setSelectedGroup]);
+
+  const modalRef = useRef<IHandles | null>(null);
+  const addSheetRef = useRef<IHandles | null>(null);
 
   const [editingTask, setEditingTask] = useState<Tarea | null>(null);
   const [isMateriaModalVisible, setIsMateriaModalVisible] = useState(false);
 
-  const setSelectedGroup = useAppStore((s) => s.setGrupoSeleccionadoId);
-  useEffect(() => {
-    setSelectedGroup(groupId);
-  }, [groupId, setSelectedGroup]);
-
-  const grupo = useAppStore((s) => s.grupos.find((g) => g.id === groupId));
+  const grupo = useAppStore((s) => s.grupos.find((g) => g.id === gid));
   const materias = grupo?.materias || [];
   const usuario = useAppStore((s) => s.usuarioActivo);
 
@@ -38,7 +38,7 @@ export default function KanbanView({ groupId }: Props) {
         text: "Eliminar",
         style: "destructive",
         onPress: () => {
-        useAppStore.getState().deleteTask(groupId, tareaId);
+        useAppStore.getState().deleteTask(gid, tareaId);
         },
       },
     ]);
@@ -47,7 +47,7 @@ export default function KanbanView({ groupId }: Props) {
   const handleToggleTaskStatus = (tareaId: string, currentStatus: string) => {
     if (!usuario) return;
     const newStatus = currentStatus === "pendiente" ? "completada" : "pendiente";
-    useAppStore.getState().updateTaskStatus(groupId, tareaId, usuario.id, newStatus);
+    useAppStore.getState().updateTaskStatus(gid, tareaId, usuario.id, newStatus);
   };
 
   const handleAddTask = () => {

@@ -11,17 +11,17 @@ import {
 } from 'react-native'
 import DateTimePickerModal from 'react-native-modal-datetime-picker'
 import { Modalize } from 'react-native-modalize'
-import { IHandles } from 'react-native-modalize/lib/options'
+import type { IHandles } from 'react-native-modalize/lib/options'
 import { useAppStore } from '../../store/useAppStore'
-import { Tarea } from '../../models/types'
+import type { Tarea } from '../../models/types'
 
-interface TaskBottomSheetProps {
-    modalRef: React.RefObject<IHandles>
+type Props = {
+    modalRef: React.RefObject<IHandles | null>
     onSave: (tarea: Partial<Tarea>) => void
     editingTask?: Tarea | null
 }
 
-const TaskBottomSheet: React.FC<TaskBottomSheetProps> = ({ modalRef, onSave, editingTask }) => {
+const TaskBottomSheet: React.FC<Props> = ({ modalRef, onSave, editingTask }) => {
     const [titulo, setTitulo] = useState('')
     const [descripcion, setDescripcion] = useState('')
     const [tipo, setTipo] = useState<'tarea' | 'examen' | 'evento' | 'recordatorio'>('tarea')
@@ -85,7 +85,7 @@ const TaskBottomSheet: React.FC<TaskBottomSheetProps> = ({ modalRef, onSave, edi
             ref={modalRef}
             adjustToContentHeight
             keyboardAvoidingBehavior="padding"
-            onClosed={resetForm} // ✅ se ejecuta cuando el modal se cierra completamente
+            onClosed={resetForm}
         >
             <View style={styles.container}>
                 <Text style={styles.title}>{editingTask ? 'Editar Tarea' : 'Nueva Tarea'}</Text>

@@ -1,19 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Pressable, Modal, StyleSheet } from "react-native";
+import { SafeAreaView, StyleSheet, Pressable, Modal, View, Text } from "react-native";
 import KanbanView from "../components/kanban/kanban_view";
 import MosaicoView from "../components/mosaico/MosaicoView";
-import {
-  type GroupStyle,
-  getGroupStyle,
-  setGroupStyle,
-} from "../lib/storage/groupStyle";
+import { getGroupStyle, setGroupStyle, GroupStyle } from "../lib/storage/groupStyle";
 
-interface RouteParams { groupId: string; nombre?: string }
-interface Props { route?: { params?: RouteParams } }
-
-export default function Grupo({ route }: Props) {
+export default function Grupo({ route }: any) {
   const groupId = route?.params?.groupId ?? "default";
-  const title = route?.params?.nombre ?? "Grupo";
   const [viewStyle, setViewStyle] = useState<GroupStyle>("mosaico");
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -31,39 +23,23 @@ export default function Grupo({ route }: Props) {
   };
 
   return (
-    <View style={{ flex: 1 }}>
-      {/* Header propio porque dijiste que no usas navigator */}
-      <View style={styles.header}>
-        <Text style={styles.title}>{title}</Text>
-        <View style={styles.right}>
-          <Text style={styles.user}>cirh</Text>
-          <Pressable
-            onPress={() => setMenuOpen(true)}
-            style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.7 }]}
-            android_ripple={{ color: "#00000022", borderless: true }}
-          >
-            <Text style={styles.icon}>⋮</Text>
-          </Pressable>
-        </View>
-      </View>
+    <SafeAreaView style={styles.container} key={viewStyle}>
+      {viewStyle === "kanban" ? <KanbanView /> : <MosaicoView groupId={groupId} />}
 
-      {viewStyle === "kanban"
-        ? <KanbanView groupId={groupId} />
-        : <MosaicoView groupId={groupId} />}
+      <Pressable onPress={() => setMenuOpen(true)} style={styles.fab}>
+        <Text style={{ fontSize: 20 }}>⋮</Text>
+      </Pressable>
 
-      {/* Menú */}
       <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={() => setMenuOpen(false)}>
         <Pressable style={styles.backdrop} onPress={() => setMenuOpen(false)} />
         <View style={styles.menu}>
           <Text style={styles.menuTitle}>Vista de tareas</Text>
-
           <Pressable style={styles.menuItem} onPress={() => applyStyle("mosaico")}>
             <View style={styles.row}>
               <View style={[styles.radio, viewStyle === "mosaico" && styles.radioOn]} />
               <Text style={styles.menuText}>Mosaico</Text>
             </View>
           </Pressable>
-
           <Pressable style={styles.menuItem} onPress={() => applyStyle("kanban")}>
             <View style={styles.row}>
               <View style={[styles.radio, viewStyle === "kanban" && styles.radioOn]} />
@@ -72,27 +48,15 @@ export default function Grupo({ route }: Props) {
           </Pressable>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    height: 56, paddingHorizontal: 16, flexDirection: "row",
-    alignItems: "center", justifyContent: "space-between",
-    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "#ddd", backgroundColor: "#fff",
-  },
-  title: { fontSize: 18, fontWeight: "600" },
-  right: { flexDirection: "row", alignItems: "center", gap: 8 },
-  user: { fontSize: 14, color: "#555" },
-  iconBtn: { padding: 6, borderRadius: 16 },
-  icon: { fontSize: 20 },
-  backdrop: { position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: "#00000033" },
-  menu: {
-    position: "absolute", top: 58, right: 12, minWidth: 200, borderRadius: 12,
-    backgroundColor: "#fff", paddingVertical: 8, elevation: 8,
-    shadowColor: "#000", shadowOpacity: 0.2, shadowRadius: 12, shadowOffset: { width: 0, height: 6 },
-  },
+  container: { flex: 1, backgroundColor: "#F8F9FA" },
+  fab: { position: "absolute", top: 8, right: 12, padding: 8, borderRadius: 16, backgroundColor: "#fff", elevation: 4, zIndex: 50 },
+  backdrop: { position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: "#0003" },
+  menu: { position: "absolute", top: 44, right: 12, minWidth: 200, borderRadius: 12, backgroundColor: "#fff", paddingVertical: 8, elevation: 8 },
   menuTitle: { fontSize: 12, color: "#666", paddingHorizontal: 12, paddingBottom: 6 },
   menuItem: { paddingHorizontal: 12, paddingVertical: 10 },
   menuText: { fontSize: 16 },
