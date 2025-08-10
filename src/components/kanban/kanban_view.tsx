@@ -1,5 +1,5 @@
-import React, { useRef, useState } from "react";
-import type { Modalize } from "react-native-modalize";
+import React, { useEffect, useRef, useState } from "react";
+import type { IHandles } from "react-native-modalize/lib/options";
 import { View, Alert, ScrollView, TouchableOpacity, Text, StyleSheet } from "react-native";
 import { Tarea } from "../../models/types";
 import { useAppStore } from "../../store/useAppStore";
@@ -8,17 +8,21 @@ import TaskBottomSheet from "./task_creation_modal";
 import MateriaModal from "./create-materia";
 import AddActionSheet from "./add_action";
 
-export default function KanbanView({ groupId }: { groupId: string }) {
-  void groupId;
+type Props = { groupId: string };
 
-  const modalRef = useRef<Modalize | null>(null);
-  const addSheetRef = useRef<Modalize | null>(null);
+export default function KanbanView({ groupId }: Props) {
+  const modalRef = useRef<IHandles>(null!);
+  const addSheetRef = useRef<IHandles>(null!);
 
   const [editingTask, setEditingTask] = useState<Tarea | null>(null);
   const [isMateriaModalVisible, setIsMateriaModalVisible] = useState(false);
 
-  const grupoId = useAppStore((s) => s.grupoSeleccionadoId);
-  const grupo = useAppStore((s) => s.grupos.find((g) => g.id === grupoId));
+  const setSelectedGroup = useAppStore((s) => s.setGrupoSeleccionadoId);
+  useEffect(() => {
+    setSelectedGroup(groupId);
+  }, [groupId, setSelectedGroup]);
+
+  const grupo = useAppStore((s) => s.grupos.find((g) => g.id === groupId));
   const materias = grupo?.materias || [];
   const usuario = useAppStore((s) => s.usuarioActivo);
 
@@ -34,17 +38,16 @@ export default function KanbanView({ groupId }: { groupId: string }) {
         text: "Eliminar",
         style: "destructive",
         onPress: () => {
-          if (!grupoId) return;
-          useAppStore.getState().deleteTask(grupoId, tareaId);
+        useAppStore.getState().deleteTask(groupId, tareaId);
         },
       },
     ]);
   };
 
   const handleToggleTaskStatus = (tareaId: string, currentStatus: string) => {
-    if (!grupoId || !usuario) return;
+    if (!usuario) return;
     const newStatus = currentStatus === "pendiente" ? "completada" : "pendiente";
-    useAppStore.getState().updateTaskStatus(grupoId, tareaId, usuario.id, newStatus);
+    useAppStore.getState().updateTaskStatus(groupId, tareaId, usuario.id, newStatus);
   };
 
   const handleAddTask = () => {
@@ -54,7 +57,7 @@ export default function KanbanView({ groupId }: { groupId: string }) {
 
   const handleSaveTask = (taskData: Partial<Tarea>) => {
     const materiaId = taskData.materiaId;
-    if (!grupoId || !materiaId) return;
+    if (!materiaId) return;
     const store = useAppStore.getState();
     if (editingTask) {
       store.updateTask(materiaId, taskData);
@@ -68,7 +71,7 @@ export default function KanbanView({ groupId }: { groupId: string }) {
     }
   };
 
-  if (!grupo || !grupoId) {
+  if (!grupo) {
     return (
       <View style={styles.centeredContainer}>
         <Text style={styles.centeredText}>Empieza por crear un grupo en el menú.</Text>
