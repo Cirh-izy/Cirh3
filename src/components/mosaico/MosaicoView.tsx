@@ -1,11 +1,20 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, Text, FlatList, Pressable, Modal, StyleSheet, RefreshControl } from "react-native";
+import {
+  View,
+  Text,
+  FlatList,
+  Pressable,
+  Modal,
+  StyleSheet,
+  RefreshControl,
+} from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type Materia = { id: string; nombre: string };
 type Tarea = { id: string; titulo: string; venceEn?: string; done?: boolean };
+type Props = { groupId: string };
 
-export default function MosaicoView({ groupId }: { groupId: string }) {
+export default function MosaicoView({ groupId }: Props) {
   const [materias, setMaterias] = useState<Materia[]>([]);
   const [loading, setLoading] = useState(false);
   const [sel, setSel] = useState<Materia | null>(null);

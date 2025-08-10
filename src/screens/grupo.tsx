@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Pressable, Modal, StyleSheet } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import KanbanView from "../components/kanban/kanban_view";
 import MosaicoView from "../components/mosaico/MosaicoView";
+import {
+  type GroupStyle,
+  getGroupStyle,
+  setGroupStyle,
+} from "../lib/storage/groupStyle";
 
-type GroupStyle = "mosaico" | "kanban";
-type Props = { route: { params: { groupId: string; nombre?: string } } };
-
-const STYLE_KEY = (id: string) => `group_style:${id}`;
+interface RouteParams { groupId: string; nombre?: string }
+interface Props { route?: { params?: RouteParams } }
 
 export default function Grupo({ route }: Props) {
   const groupId = route?.params?.groupId ?? "default";
@@ -17,17 +19,15 @@ export default function Grupo({ route }: Props) {
 
   useEffect(() => {
     (async () => {
-      try {
-        const s = await AsyncStorage.getItem(STYLE_KEY(groupId));
-        if (s === "mosaico" || s === "kanban") setViewStyle(s);
-      } catch {}
+      const s = await getGroupStyle(groupId);
+      if (s) setViewStyle(s);
     })();
   }, [groupId]);
 
   const applyStyle = async (s: GroupStyle) => {
     setViewStyle(s);
     setMenuOpen(false);
-    try { await AsyncStorage.setItem(STYLE_KEY(groupId), s); } catch {}
+    await setGroupStyle(groupId, s);
   };
 
   return (
