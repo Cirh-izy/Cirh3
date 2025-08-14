@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState, forwardRef, useImperativeHandle } from "react";
 import { View, Text, FlatList, Pressable, StyleSheet, Modal, SafeAreaView, Alert } from "react-native";
 import { useAppStore } from "../../store/useAppStore";
 import type { Tarea } from "../../models/types";
@@ -8,7 +8,11 @@ import MateriaModal from "../kanban/create-materia";
 import AddActionSheet from "../kanban/add_action";
 import type { IHandles } from "react-native-modalize/lib/options";
 
-export default function MosaicoView({ groupId }: { groupId?: string }) {
+export type MosaicoHandle = { openAdd: () => void };
+
+type Props = { groupId?: string };
+
+function MosaicoViewInner({ groupId }: Props, ref: React.Ref<MosaicoHandle>) {
   const gidFromStore = useAppStore(s => s.grupoSeleccionadoId);
   const gid = groupId ?? gidFromStore;
   const grupo = useAppStore(s => s.grupos.find(g => g.id === gid));
@@ -25,6 +29,10 @@ export default function MosaicoView({ groupId }: { groupId?: string }) {
     () => materias.find(m => String(m.id) === String(openMateriaId)) ?? null,
     [openMateriaId, materias]
   );
+
+  useImperativeHandle(ref, () => ({
+    openAdd: () => addRef.current?.open(),
+  }), []);
 
   const handleEditTask = (t: Tarea) => { setEditingTask(t); taskRef.current?.open(); };
   const handleAddTask = () => { setEditingTask(null); taskRef.current?.open(); };
@@ -65,12 +73,6 @@ export default function MosaicoView({ groupId }: { groupId?: string }) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.topBar}>
-        <Pressable style={styles.addButton} onPress={() => addRef.current?.open()}>
-          <Text style={styles.addButtonText}>＋</Text>
-        </Pressable>
-        <Text style={styles.headerTitle}>📋 {grupo?.nombre ?? "Grupo"}</Text>
-      </View>
 
       <FlatList
         data={materias}
@@ -152,6 +154,8 @@ export default function MosaicoView({ groupId }: { groupId?: string }) {
     </View>
   );
 }
+
+export default forwardRef(MosaicoViewInner);
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F8F9FA" },

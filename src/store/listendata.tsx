@@ -1,18 +1,19 @@
-import firestore from '@react-native-firebase/firestore';
+// src/services/debugTests.ts
+import { db } from '../utils/firebase';
+import { addDoc, collection, onSnapshot } from 'firebase/firestore';
 
-// Guardar dato de prueba
 export async function saveTestData() {
-    await firestore().collection('debugTests').add({
+    await addDoc(collection(db, 'debugTests'), {
         mensaje: 'Hola Firebase',
-        fecha: new Date()
+        fecha: new Date(),
     });
     console.log('Documento guardado!');
 }
 
-// Leer datos de prueba
 export function listenTestData() {
-    return firestore().collection('debugTests').onSnapshot(snapshot => {
-        snapshot.forEach(doc => {
+    // devuelve la función para desuscribirse
+    return onSnapshot(collection(db, 'debugTests'), (snapshot) => {
+        snapshot.forEach((doc) => {
             console.log('Doc:', doc.id, doc.data());
         });
     });

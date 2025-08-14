@@ -1,5 +1,4 @@
 
-import React, { useEffect, useRef, useState } from "react";
 import type { IHandles } from "react-native-modalize/lib/options";
 import { View, Alert, ScrollView, TouchableOpacity, Text, StyleSheet } from "react-native";
 import type { Tarea } from "../../models/types";
@@ -9,10 +8,14 @@ import TaskBottomSheet from "./task_creation_modal.tsx";
 import MateriaModal from "./create-materia";
 import AddActionSheet from "./add_action";
 import { SafeAreaView } from "react-native-safe-area-context";
+import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from "react";
 
-type Props = { groupId?: string };
+// type Props = { groupId?: string };
 
-export default function KanbanView({ groupId }: Props) {
+export type KanbanHandle = { openAdd: () => void };
+
+function KanbanViewInner({ groupId }: { groupId?: string }, ref: React.Ref<KanbanHandle>) {
+    const addSheetRef = useRef<IHandles | null>(null);
     const gidFromStore = useAppStore((s) => s.grupoSeleccionadoId);
     const gid = groupId ?? gidFromStore ?? "";
     const setSelectedGroup = useAppStore((s) => s.setGrupoSeleccionadoId);
@@ -21,7 +24,6 @@ export default function KanbanView({ groupId }: Props) {
     }, [gid, setSelectedGroup]);
 
     const modalRef = useRef<IHandles | null>(null);
-    const addSheetRef = useRef<IHandles | null>(null);
 
     const [editingTask, setEditingTask] = useState<Tarea | null>(null);
     const [isMateriaModalVisible, setIsMateriaModalVisible] = useState(false);
@@ -47,6 +49,9 @@ export default function KanbanView({ groupId }: Props) {
             },
         ]);
     };
+    useImperativeHandle(ref, () => ({
+        openAdd: () => addSheetRef.current?.open(),
+    }), []);
 
     const handleToggleTaskStatus = (tareaId: string, currentStatus: string) => {
         if (!usuario) return;
@@ -87,9 +92,7 @@ export default function KanbanView({ groupId }: Props) {
 
     return (
         <View style={styles.container}>
-            {/* TOP BAR */}
-            <View style={styles.topBar}>
-                {/* Botón + (izquierda) */}
+            {/* <View style={styles.topBar}>
                 <TouchableOpacity
                     accessibilityRole="button"
                     accessibilityLabel="Añadir"
@@ -99,21 +102,19 @@ export default function KanbanView({ groupId }: Props) {
                     <Text style={styles.iconButtonText}>＋</Text>
                 </TouchableOpacity>
 
-                {/* Título centrado absolutamente */}
                 <Text numberOfLines={1} style={styles.headerTitle}>
                     {grupo?.nombre || "Grupo"}
                 </Text>
 
-                {/* Botón ... (derecha) */}
-                {/* <TouchableOpacity
+                <TouchableOpacity
                     accessibilityRole="button"
                     accessibilityLabel="Más opciones"
                     onPress={() => addSheetRef.current?.open()}
                     style={styles.iconButton}
                 >
                     <Text style={styles.iconButtonText}>⋯</Text>
-                </TouchableOpacity> */}
-            </View>
+                </TouchableOpacity>
+            </View> */}
 
             {materias.length === 0 ? (
                 <View style={styles.centeredContainer}>
@@ -241,3 +242,6 @@ const styles = StyleSheet.create({
     centeredContainer: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20 },
     centeredText: { fontSize: 16, color: "#666", textAlign: "center" },
 });
+
+const KanbanView = forwardRef<KanbanHandle, { groupId?: string }>(KanbanViewInner);
+export default KanbanView;

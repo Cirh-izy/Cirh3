@@ -7,7 +7,8 @@ import MenuScreen from '../screens/menu'
 import GrupoScreen from '../screens/grupo'
 import ManejoScreen from '../screens/follow'
 import KanbanView from '../components/kanban/kanban_view'
-import HomeScreen from '../screens/home'
+// import HomeScreen from '../screens/home'
+import AuthPanel from '../components/menu/authpanel'
 
 export type RootStackParamList = {
     MainTabs: undefined
@@ -53,16 +54,16 @@ function MainTabs() {
                     tabBarLabel: 'Menú',
                 }}
             />
-            {/* <Tab.Screen
+            <Tab.Screen
                 name="home"
-                component={HomeScreen}
+                component={AuthPanel}
                 options={{
                     tabBarIcon: ({ color }) => (
-                        <MaterialIcons name="menu" color={color} size={24} />
+                        <MaterialIcons name="ball" color={color} size={24} />
                     ),
-                    tabBarLabel: 'Menú',
+                    tabBarLabel: 'autentificar',
                 }}
-            /> */}
+            />
             <Tab.Screen
                 name="Grupo"
                 component={GrupoScreen}
